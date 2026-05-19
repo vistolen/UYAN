@@ -1,19 +1,33 @@
-window.addEventListener('load', function(){
-    // canvas setup
-// canvas setup
-    const canvas = document.getElementById('canvas1');
-    const ctx = canvas.getContext('2d');
+// 1. Değişkenleri en dışta (global) tanımlıyoruz ki her yer erişebilsin
+var game;
+let canvas;
+let ctx;
 
-    // Bu fonksiyonu ve olay izleyiciyi en başa koyuyoruz
-    function resizeCanvas() {
+// 2. Ekran boyutlandırma fonksiyonu dışarıda tertemiz duruyor
+function resizeCanvas() {
+    if (canvas) {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
+}
+
+// 3. Sayfa yüklendiğinde sadece canvas'ı yakalayıp oyunu kuruyoruz
+window.addEventListener('load', function(){
+    canvas = document.getElementById('canvas1');
+    ctx = canvas.getContext('2d');
+    
     resizeCanvas();
 
-    window.addEventListener('resize', resizeCanvas);
+    // Başında let veya const olmadan direkt objeyi oluşturuyoruz
+    game = new Game(canvas.width, canvas.height);
+    game.gameOver = true; // İlk başta menüde beklesin
+});
 
-    // Geri kalan Game, Player sınıfların ve animate fonksiyonun burada devam edecek...
+window.addEventListener('resize', resizeCanvas);
+
+// =================================================================
+// BUNDAN SONRASINA HİÇ DOKUNMA (Class InputHandler, Game vb. aynen devam etsin)
+// =================================================================    // Geri kalan Game, Player sınıfların ve animate fonksiyonun burada devam edecek...
 // Canvası tarayıcı penceresine eşitle
 
 
