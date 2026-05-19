@@ -1,5 +1,5 @@
 // 1. Değişkenleri en dışta (global) tanımlıyoruz ki her yer erişebilsin
-var game;
+
 let canvas;
 let ctx;
 
