@@ -898,5 +898,5 @@ startButton.addEventListener('click', function() {
     // animate(0); satırın burada olmalı
     animate(0); 
 });
-});
+
 
