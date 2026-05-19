@@ -879,34 +879,23 @@ draw(context){
 
     game = new Game(canvas.width, canvas.height);
     let lastTime = 0;
-    // animation loop
     function animate(timeStamp){
-    // GÜVENLİK KİLİDİ: Eğer game nesnesi henüz kurulmadıysa 
-    // veya tanımlanmadıysa bu kareyi pas geç, çökme yaratma!
-    if (!game) {
+    // GÜVENLİK KİLİDİ: Nesneler veya canvas hazır değilse çökmesini engelle
+    if (!game || !canvas || !ctx) {
         requestAnimationFrame(animate);
         return;
     }
 
     const deltaTime = timeStamp - lastTime;
     lastTime = timeStamp;
+    
+    // Ekranı her karede temizle
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Oyun dünyasını çiz ve güncelle
     game.draw(ctx);
     game.update(deltaTime);
+    
+    // Döngüyü devam ettir
     requestAnimationFrame(animate);
-}    // Kodunun en sonuna, animate fonksiyonunun dışına ekle:
-const startButton = document.getElementById('startButton');
-const gameMenu = document.getElementById('gameMenu');
-
-
-startButton.addEventListener('click', function() {
-    gameMenu.style.display = 'none'; // Menüyü gizle
-    
-    if (game) {
-        game.gameOver = false; // 1. Menü durumunu kapat, oyunu aktif et!
-        game.score = 0;        // 2. İsteğe bağlı: Skoru sıfırla
-    }
-    
-    animate(0); // Oyun döngüsünü başlat
-});
+}
