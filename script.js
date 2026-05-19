@@ -874,12 +874,13 @@ draw(context){
                             rect1.x + rect1.width > rect2.x &&
                             rect1.y < rect2.y + rect2.height &&
                             rect1.height + rect1.y > rect2.y)
-        }
-    }
+        
 
-    game = new Game(canvas.width, canvas.height);
-    let lastTime = 0;
-    function animate(timeStamp){
+        } // class Game veya checkCollision bittiği yer
+
+let lastTime = 0;
+
+function animate(timeStamp){
     // GÜVENLİK KİLİDİ: Nesneler veya canvas hazır değilse çökmesini engelle
     if (!game || !canvas || !ctx) {
         requestAnimationFrame(animate);
@@ -898,4 +899,4 @@ draw(context){
     
     // Döngüyü devam ettir
     requestAnimationFrame(animate);
-}
+}    
