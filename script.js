@@ -878,7 +878,7 @@ draw(context){
 
         } // class Game veya checkCollision bittiği yer
 
-let lastTime = 0;
+let lastTime = 0; 
 
 function animate(timeStamp){
     // GÜVENLİK KİLİDİ: Nesneler veya canvas hazır değilse çökmesini engelle
