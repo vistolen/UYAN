@@ -881,15 +881,21 @@ draw(context){
     let lastTime = 0;
     // animation loop
     function animate(timeStamp){
-        
-        const deltaTime = timeStamp - lastTime;
-        lastTime = timeStamp;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        game.draw(ctx);
-        game.update(deltaTime);
+    // GÜVENLİK KİLİDİ: Eğer game nesnesi henüz kurulmadıysa 
+    // veya tanımlanmadıysa bu kareyi pas geç, çökme yaratma!
+    if (!game) {
         requestAnimationFrame(animate);
+        return;
     }
-    // Kodunun en sonuna, animate fonksiyonunun dışına ekle:
+
+    const deltaTime = timeStamp - lastTime;
+    lastTime = timeStamp;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    game.draw(ctx);
+    game.update(deltaTime);
+    requestAnimationFrame(animate);
+}    // Kodunun en sonuna, animate fonksiyonunun dışına ekle:
 const startButton = document.getElementById('startButton');
 const gameMenu = document.getElementById('gameMenu');
 
