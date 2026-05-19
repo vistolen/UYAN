@@ -877,7 +877,7 @@ draw(context){
         }
     }
 
-    const game = new Game(canvas.width, canvas.height);
+     game = new Game(canvas.width, canvas.height);
     let lastTime = 0;
     // animation loop
     function animate(timeStamp){
