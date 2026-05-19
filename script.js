@@ -899,10 +899,14 @@ draw(context){
 const startButton = document.getElementById('startButton');
 const gameMenu = document.getElementById('gameMenu');
 
+
 startButton.addEventListener('click', function() {
     gameMenu.style.display = 'none'; // Menüyü gizle
-    // animate(0); satırın burada olmalı
-    animate(0); 
+    
+    if (game) {
+        game.gameOver = false; // 1. Menü durumunu kapat, oyunu aktif et!
+        game.score = 0;        // 2. İsteğe bağlı: Skoru sıfırla
+    }
+    
+    animate(0); // Oyun döngüsünü başlat
 });
-
-
