@@ -890,3 +890,29 @@ let lastTime = 0;
     // Döngüyü devam ettir
     requestAnimationFrame(animate);
 }    
+// =================================================================
+// OYUNU BAŞLATAN ASIL TETİKLEYİCİ (Dosyanın En Sonu)
+// =================================================================
+const startButton = document.getElementById('startButton');
+const gameMenu = document.getElementById('gameMenu');
+
+if (startButton) {
+    startButton.addEventListener('click', function() {
+        // Canvas ve Ctx'in dolu olduğundan emin olalım
+        if (!canvas) canvas = document.getElementById('canvas1');
+        if (!ctx) ctx = canvas.getContext('2d');
+        
+        // Ekranı tam boyuta getir
+        resizeCanvas();
+
+        // Game nesnesini burada sıfırdan yaratalım
+        game = new Game(canvas.width, canvas.height);
+        
+        // Oyunu başlat ve menüyü gizle
+        game.gameOver = false; 
+        if (gameMenu) gameMenu.style.display = 'none'; 
+
+        // Oyun döngüsünü tetikle
+        animate(0); 
+    });
+}
