@@ -907,7 +907,7 @@ startButton.addEventListener('click', function() {
     // 💡 KRİTİK DÜZELTME: Butona basıldığı an zaman sayacını 
     // ve oyun döngüsünün başlangıcını tamamen senkronize ediyoruz.
     lastTime = performance.now(); 
-    
+    game.gameTime = 0;
     game.gameOver = false; 
     if (gameMenu) gameMenu.style.display = 'none'; 
 
