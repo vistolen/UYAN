@@ -1,33 +1,19 @@
-// 1. Değişkenleri en dışta (global) tanımlıyoruz ki her yer erişebilsin
-var game
-let canvas;
-let ctx;
+window.addEventListener('load', function(){
+    // canvas setup
+// canvas setup
+    const canvas = document.getElementById('canvas1');
+    const ctx = canvas.getContext('2d');
 
-// 2. Ekran boyutlandırma fonksiyonu dışarıda tertemiz duruyor
-function resizeCanvas() {
-    if (canvas) {
+    // Bu fonksiyonu ve olay izleyiciyi en başa koyuyoruz
+    function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-}
-
-// 3. Sayfa yüklendiğinde sadece canvas'ı yakalayıp oyunu kuruyoruz
-window.addEventListener('load', function(){
-    canvas = document.getElementById('canvas1');
-    ctx = canvas.getContext('2d');
-    
     resizeCanvas();
 
-    // Başında let veya const olmadan direkt objeyi oluşturuyoruz
-    game = new Game(canvas.width, canvas.height);
-    game.gameOver = true; // İlk başta menüde beklesin
-});
+    window.addEventListener('resize', resizeCanvas);
 
-window.addEventListener('resize', resizeCanvas);
-
-// =================================================================
-// BUNDAN SONRASINA HİÇ DOKUNMA (Class InputHandler, Game vb. aynen devam etsin)
-// =================================================================    // Geri kalan Game, Player sınıfların ve animate fonksiyonun burada devam edecek...
+    // Geri kalan Game, Player sınıfların ve animate fonksiyonun burada devam edecek...
 // Canvası tarayıcı penceresine eşitle
 
 
@@ -699,18 +685,48 @@ this.credits = [
             this.maxAmmo = 50;
             this.ammoTimer = 0;
             this.ammoInterval = 350;
-            this.gameOver = false;
+            this.gameOver = true;
             this.score = 0;
             this.winningScore = 80;
             this.gameTime = 0;
             this.timeLimit = 60000;
             this.speed = 1; 
             this.debug = false;
+            // Kabus Etkinliği (Gözün İzleme Etkinliği) Değişkenleri
+        this.eventTimer = 0;
+        this.eventInterval = 15000; // Her 15 saniyede bir tetiklenir (milisaniye cinsinden)
+        this.eventActive = false;
+        this.eventDuration = 5000;  // Etkinlik 5 saniye sürer
+        this.eventCountdown = 0;
+        
+        // Orijinal düşman hızını korumak için yedek
+        this.baseEnemySpeedModifier = 1;
+// Kombo ve Öfke (Rage) Sistemi Değişkenleri
+        this.combo = 0;
+        this.rageActive = false;
+        this.rageTimer = 0;
+        this.rageDuration = 6000; // Öfke modu 6 saniye sürer
+
         }
        
     update(deltaTime){
             // 1. ZAMANLAYICI VE CREDITS HAREKETİ
-            if (!this.gameOver) this.gameTime += deltaTime;
+            if (this.gameOver) return;
+
+        // Uyku süresini veya oyun süresini akan deltaTime kadar arttır
+        this.gameTime += deltaTime;
+        // Eğer sleepTime veya başka bi
+
+        // =================================================================
+        // ÖFKE (RAGE) MODU SÜRE KONTROLÜ
+        // =================================================================
+        if (this.rageActive) {
+            this.rageTimer -= deltaTime;
+            if (this.rageTimer <= 0) {
+                this.rageActive = false;
+                this.combo = 0; // Öfke bitince komboyu sıfırla
+            }
+        }
             
             if (this.showCreditsMode) {
                 this.creditY -= 1.5; // Yazıları yukarı kaydır
@@ -738,6 +754,47 @@ this.credits = [
                 this.explosions.forEach(explosion => explosion.update(deltaTime));
                 this.explosions = this.explosions.filter(explosion => !explosion.markedForDeletion);
 
+                // =================================================================
+        // KABUS ETKİNLİĞİ: GÖZ SENİ İZLİYOR!
+        // =================================================================
+        if (!this.eventActive) {
+            this.eventTimer += deltaTime;
+            if (this.eventTimer >= this.eventInterval) {
+                // Etkinliği başlat!
+                this.eventActive = true;
+                this.eventTimer = 0;
+                this.eventCountdown = this.eventDuration;
+                
+                // Düşmanları çıldırt: Hepsini hızlandır ve oyuncuya depar attır!
+                this.enemies.forEach(enemy => {
+                    if (enemy.speed) enemy.speed *= 2.5; // Düşman hızlarını 2.5 katına çıkar
+                });
+                
+                // Eğer oyunda bir ses motorun varsa buraya korkunç bir çığlık/uyarı sesi ekleyebilirsin:
+                // this.sound.playEyeScare();
+            }
+        } else {
+            // Etkinlik aktifken süreden düş
+            this.eventCountdown -= deltaTime;
+            
+            // Etkinlik esnasında yeni doğan düşmanlar da hızlı doğsun
+            this.enemies.forEach(enemy => {
+                if (!enemy.speedBoosted) {
+                    enemy.speed *= 2.5;
+                    enemy.speedBoosted = true; // Sonsuz döngüde katlanmasın diye işaretliyoruz
+                }
+            });
+
+            if (this.eventCountdown <= 0) {
+                // Etkinlik bitti, her şeyi normale döndür
+                this.eventActive = false;
+                this.enemies.forEach(enemy => {
+                    enemy.speed /= 2.5;
+                    enemy.speedBoosted = false;
+                });
+            }
+        }
+
                 // Düşman Güncellemeleri ve Çarpışma Kontrolü
                 this.enemies.forEach(enemy => {
                     enemy.update();
@@ -759,6 +816,12 @@ this.credits = [
                     // Mermi düşmana çarparsa
                     this.player.projectiles.forEach(projectile => {
                         if (this.checkCollision(projectile, enemy)){
+
+                            this.combo++; 
+                if (this.combo >= 10 && !this.rageActive) {
+                    this.rageActive = true;
+                    this.rageTimer = this.rageDuration;
+                }
                             enemy.lives--;
                             projectile.markedForDeletion = true;
                             if (enemy.lives <= 0){
@@ -821,41 +884,79 @@ this.credits = [
     }
 }
 draw(context){
-            // 1. OYUNUN KENDİSİNİ ÇİZ
-            this.background.draw(context);
-            this.ui.draw(context);
-            this.player.draw(context);
-            this.shield.draw(context);
-            this.particles.forEach(particle => particle.draw(context));
-            this.enemies.forEach(enemy => enemy.draw(context));
-            this.explosions.forEach(explosion => explosion.draw(context));
-            this.background.layer4.draw(context);
+        // 1. OYUNUN KENDİSİNİ ÇİZ (Arka plan ve nesneler)
+        this.background.draw(context);
+        this.ui.draw(context);
+        this.player.draw(context);
+        this.shield.draw(context);
+        this.particles.forEach(particle => particle.draw(context));
+        this.enemies.forEach(enemy => enemy.draw(context));
+        this.explosions.forEach(explosion => explosion.draw(context));
+        this.background.layer4.draw(context);
 
-            // 2. CREDITS EKRANI (Kabus kazandığında devreye girer)
-            if (this.showCreditsMode) {
-                context.save();
+        // =================================================================
+        // 🔥 DOĞRU YER: 4. ADIM KOMBO VE ÖFKE ARAYÜZ ÇİZİMİ
+        // =================================================================
+        context.save();
+        context.font = '24px monospace';
+        context.textAlign = 'left';
+
+        if (this.rageActive) {
+            // ÖFKE MODU AKTİFKEN: Sol üstte alevli yazı ve kalan süre sayacı
+            context.fillStyle = '#ff3300';
+            const rageGlitch = Math.random() * 2;
+            context.fillText(`🔥 ÖFKE MODU: ${(this.rageTimer / 1000).toFixed(1)}s`, 40 + rageGlitch, 180);
+            
+            // Ekranın etrafına siber-turuncu hafif bir öfke parlaması katıyoruz
+            context.fillStyle = 'rgba(255, 68, 0, 0.08)';
+            context.fillRect(0, 0, this.width, this.height);
+        } else {
+            // NORMAL MODDA: Kombo varsa sadece mevcut kombo sayısını ve barını çiz
+            if (this.combo > 0) {
+                context.fillStyle = '#ffffff';
+                context.fillText(`KOMBO: X${this.combo}`, 40, 180);
                 
-                // Arka planı karart
-                context.fillStyle = 'rgba(0, 0, 0, 0.85)';
-                context.fillRect(0, 0, this.width, this.height);
-
-                // Yazı fontu ve rengi
-                context.textAlign = 'center';
-                context.fillStyle = '#ff0000'; // Kırmızı
-                context.font = '40px Bangers';
-                context.shadowOffsetX = 3;
-                context.shadowOffsetY = 3;
-                context.shadowColor = 'black';
-
-                // Yazıları tek tek çizdir
-                this.credits.forEach((line, index) => {
-                    // creditY her karede update içinde azaldığı için yazılar akar
-                    context.fillText(line, this.width * 0.5, this.creditY + (index * 60));
-                });
-
-                context.restore();
+                // Küçük kombo ilerleme çubuğu arka planı
+                context.fillStyle = '#444444';
+                context.fillRect(40, 195, 100, 6);
+                
+                // Kombo ilerleme çubuğunun kendisi (10'a yaklaştıkça dolar)
+                context.fillStyle = '#ffcc00';
+                context.fillRect(40, 195, this.combo * 10, 6);
             }
         }
+        context.restore();
+
+        // =================================================================
+        // 👁️ KABUS ETKİNLİĞİ GÖRSEL EFEKTLERİ (GÖZ SENİ İZLİYOR)
+        // =================================================================
+        if (this.eventActive) {
+            context.save();
+            
+            // Ekranın etrafına hafif kırmızı, saydam bir panik havası katıyoruz
+            context.fillStyle = 'rgba(255, 0, 0, 0.15)';
+            context.fillRect(0, 0, this.width, this.height);
+            
+            // Glitch efekti yaratmak için yazıyı rastgele titretiyoruz
+            const glitchX = Math.random() * 4 - 2;
+            const glitchY = Math.random() * 4 - 2;
+            
+            context.font = 'bold 40px monospace';
+            context.textAlign = 'center';
+            
+            // Yazının gölgesi (Siber Kırmızı)
+            context.fillStyle = '#800000';
+            context.fillText("GÖZ SENİ İZLİYOR !", this.width / 2 + glitchX + 2, 100 + glitchY + 2);
+            
+            // Yazının kendisi (Saf Kan Kırmızısı)
+            context.fillStyle = '#ff0000';
+            context.fillText("GÖZ SENİ İZLİYOR !", this.width / 2 + glitchX, 100 + glitchY);
+            
+            context.restore();
+        }
+
+    } // 👈 DRAW FONKSİYONUNUN GERÇEK KAPANIŞ PARANTEZİ
+    
 
         // Çarpışma kontrol fonksiyonun (Eğer sınıfta yoksa bunu da eklemelisin)
         checkCollision(rect1, rect2){
@@ -866,51 +967,76 @@ draw(context){
                 rect1.height + rect1.y > rect2.y
             )
         }
+    // class Game burada bitiyor
+
+
+        checkCollision(rect1, rect2){
+            return (        rect1.x < rect2.x + rect2.width &&
+                            rect1.x + rect1.width > rect2.x &&
+                            rect1.y < rect2.y + rect2.height &&
+                            rect1.height + rect1.y > rect2.y)
+        }
     }
 
-
-let lastTime = 0;
- function animate(timeStamp){
-    // GÜVENLİK KİLİDİ: Nesneler veya canvas hazır değilse çökmesini engelle
-    if (!game || !canvas || !ctx) {
+    let game = new Game(canvas.width, canvas.height);
+    let lastTime = 0;
+    // animation loop
+    function animate(timeStamp) {
+        // 1. Tarayıcının çizim motorunu her zaman canlı tutuyoruz
         requestAnimationFrame(animate);
-        return;
-    }
 
-    const deltaTime = timeStamp - lastTime;
-    lastTime = timeStamp;
-    
-    // Ekranı her karede temizle
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Oyun dünyasını çiz ve güncelle
-    game.draw(ctx);
-    game.update(deltaTime);
-    
-    // Döngüyü devam ettir
-    requestAnimationFrame(animate);
-}    
-// =================================================================
-// OYUNU BAŞLATAN ASIL TETİKLEYİCİ (Dosyanın En Sonu)
-// =================================================================
+        // 2. Tuval henüz yüklenmediyse bu kareyi pas geç
+        if (!canvas || !ctx) return;
+
+        // 3. MENÜ KONTROLÜ: Eğer oyuncu henüz BAŞLA'ya basmadıysa arkada hiçbir şeyi çizme
+        const menu = document.getElementById('gameMenu');
+        if (menu && menu.style.display !== 'none') {
+            return; 
+        }
+
+        // 4. GÜVENLİK DUVARI: Eğer game nesnesi henüz kurulmadıysa (undefined ise) çökme, dön
+        if (!game) return;
+
+        // 5. OYUN BİTTİ KONTROLÜ: Sadece game nesnesi VSA ve oyun bittiyse draw'a izin ver
+        if (game && game.gameOver) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            game.draw(ctx);
+            return;
+        }
+
+        // =================================================================
+        // 6. ASIL OYUN DÖNGÜSÜ
+        // =================================================================
+        const deltaTime = timeStamp - lastTime;
+        lastTime = timeStamp;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        game.update(deltaTime);
+        game.draw(ctx);
+    }
+  
 const startButton = document.getElementById('startButton');
 const gameMenu = document.getElementById('gameMenu');
 
 startButton.addEventListener('click', function() {
-    if (!canvas) canvas = document.getElementById('canvas1');
-    if (!ctx) ctx = canvas.getContext('2d');
-    
-    resizeCanvas();
-
-    game = new Game(canvas.width, canvas.height);
-    
-    // 💡 KRİTİK DÜZELTME: Butona basıldığı an zaman sayacını 
-    // ve oyun döngüsünün başlangıcını tamamen senkronize ediyoruz.
-    lastTime = performance.now(); 
-    game.gameTime = 0;
-    game.gameOver = false; 
+    // 1. Önce menüyü gizle (Yukarıdaki esnek kilit menünün gizlendiğini görecek)
     if (gameMenu) gameMenu.style.display = 'none'; 
 
-    // İlk kareyi 0 yerine güncel zamanla başlatıyoruz
+    // 2. Tuvali boyutlandır
+    resizeCanvas();
+
+    // 3. Yepyeni bir oyun nesnesi fırlat
+    game = new Game(canvas.width, canvas.height);
+    
+    // 4. Durumları ve süreleri sıfırla
+    game.gameTime = 0; 
+    if (game.sleepTime) game.sleepTime = 0;
+    game.gameOver = false; // Kilidi tamamen açtık!
+    
+    // 5. Motoru çalıştır
+    lastTime = performance.now();
     animate(performance.now()); 
 });
+});
+
