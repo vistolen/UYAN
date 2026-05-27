@@ -1020,23 +1020,18 @@ const startButton = document.getElementById('startButton');
 const gameMenu = document.getElementById('gameMenu');
 
 startButton.addEventListener('click', function() {
-    // 1. Önce menüyü gizle (Yukarıdaki esnek kilit menünün gizlendiğini görecek)
-    if (gameMenu) gameMenu.style.display = 'none'; 
+    // 1. Ses motorunu tam kullanıcı tıkladığı bu anda ateşle (NotAllowedError'u çözer)
+    if (game && game.sound) {
+        game.sound.playBackgroundMusic(); // Kendi müzik başlatma fonksiyonun
+    }
 
-    // 2. Tuvali boyutlandır
+    if (gameMenu) gameMenu.style.display = 'none'; 
     resizeCanvas();
 
-    // 3. Yepyeni bir oyun nesnesi fırlat
     game = new Game(canvas.width, canvas.height);
-    
-    // 4. Durumları ve süreleri sıfırla
     game.gameTime = 0; 
-    if (game.sleepTime) game.sleepTime = 0;
-    game.gameOver = false; // Kilidi tamamen açtık!
+    game.gameOver = false; 
     
-    // 5. Motoru çalıştır
-    lastTime = performance.now();
+    lastTime = performance.now(); 
     animate(performance.now()); 
 });
-});
-
