@@ -956,7 +956,7 @@ draw(context){
         }
 
     } // 👈 DRAW FONKSİYONUNUN GERÇEK KAPANIŞ PARANTEZİ
-    
+    }
 
         // Çarpışma kontrol fonksiyonun (Eğer sınıfta yoksa bunu da eklemelisin)
         checkCollision(rect1, rect2){
